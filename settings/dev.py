@@ -1,4 +1,5 @@
-from base import *
+# coding=utf-8
+# from base import *
 
 
 
@@ -13,5 +14,10 @@ DATABASES = {
     },
 
 }
+
+# email conf 邮箱相关
+DEFAULT_FROM_EMAIL = ""
+
+
 
 
