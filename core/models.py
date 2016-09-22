@@ -1,3 +1,4 @@
+# coding=utf-8
 from __future__ import unicode_literals
 
 from django.db import models
@@ -6,7 +7,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.contrib.auth.base_user import BaseUserManager
 from django.conf import settings
 from django.utils.translation import ugettext_lazy as _
-
+from utils import file_rename
 # Create your models here.
 
 
@@ -43,10 +44,8 @@ class UserManager(BaseUserManager):
 
 
 class User(AbstractBaseUser, PermissionsMixin):
-    email = models.EmailField(verbose_name='email address', max_length=255, unique=True)
-    # TODO 昵称支持中文, 多少长度合适
-    nickname = models.CharField(max_length=30, unique=True)
-
+    email = models.EmailField(_(u'邮箱'), max_length=255, unique=True)
+    nickname = models.CharField(_(u'别名'), max_length=30, unique=True)
     is_staff = models.BooleanField(
         _('staff status'),
         default=False,
@@ -60,10 +59,9 @@ class User(AbstractBaseUser, PermissionsMixin):
             'Unselect this instead of deleting accounts.'
         ),
     )
-    # TODO 如何保证头像的名称 唯一？
-    avatar = models.ImageField(upload_to='avatars/', null=True, blank=True,
+    avatar = models.ImageField(_(u'头像'), upload_to=file_rename('avatars/'), null=True, blank=True,
                                help_text=_('user avatar'))
-    date_joined = models.DateTimeField(_('date joined'), default=timezone.now)
+    date_joined = models.DateTimeField(_('注册时间'), default=timezone.now)
 
     objects = UserManager()
 
@@ -84,42 +82,41 @@ class User(AbstractBaseUser, PermissionsMixin):
         return self.nickname
 
 
-class UserInfo(models.Model):
+class TimeStampedModel(models.Model):
+    create_time = models.DateTimeField(auto_created=True)
+    modify_time = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        abstract = True
+
+
+class UserInfo(TimeStampedModel):
     user = models.OneToOneField(settings.AUTH_USER_MODEL)
     sign = models.CharField(_(u'签名'), blank=True, max_length=50)
     slogan = models.TextField(_(u'个人简介'), blank=True)
     city = models.CharField(_(u'常居地'), blank=True, max_length=20)
     company = models.CharField(_(u'公司'), blank=True, max_length=50)
     position = models.CharField(_(u'职位'),  blank=True, max_length=20)
-    create_time = models.DateTimeField(auto_created=True)
-    modify_time = models.DateTimeField(auto_now=True)
-
-    class Meta:
-        verbose_name = _('user_info')
 
 
 class LoginInfo(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
-    ip_address = models.IPAddressField(default='0.0.0.0')
+    ip_address = models.GenericIPAddressField(default='0.0.0.0')
     login_time = models.DateTimeField(auto_now_add=True)
-
-    class Meta:
-        verbose_name = _('login_info')
 
 
 class ContactIM(models.Model):
     IM_TYPE_CHOICES = (
-        ('Weibo', 'Weibo'),
-        ('zhihu', 'Zhihu'),
-        ('douban', 'Douban'),
-        ('other', 'other'),
+        ('WB', u'微博'),
+        ('ZH', u'知乎'),
+        ('DB', u'豆瓣'),
+        ('OT', u'其他'),
     )
     user = models.ForeignKey(settings.AUTH_USER_MODEL)
     im_type = models.CharField(max_length=15, choices=IM_TYPE_CHOICES)
     link = models.URLField()
 
     class Meta:
-        verbose_name = _('contact_im')
         unique_together = ("user", "im_type")
 
 
